@@ -1,9 +1,10 @@
 'use client'
 
+import { useEffect } from 'react';
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useState } from 'react'
-import { set, z } from "zod"
+import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
@@ -13,10 +14,9 @@ import {
 import CustomInput from './CustomInput'
 import { AuthFormSchema } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
-import { Sign } from 'crypto'
+
 import { useRouter } from 'next/navigation'
-import SignUp from '@/app/(auth)/sign-up/[[...sign-up]]/page'
-import SignIn from '@/app/(auth)/sign-in/[[...sign-in]]/page'
+import { signIn, signUp } from '@/lib/actions/user.actions'
 
 
 const AuthForm = ({ type }: { type: string }) => {
@@ -34,28 +34,36 @@ const AuthForm = ({ type }: { type: string }) => {
         },
     })
 
+
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
-        setIsLoading(true)
+        setIsLoading(true);
+
         try {
-            //Sign up with Appwrite & create plaid token
             if (type === 'sign-up') {
-                const newUser = await SignUp(data);
-                setUser(newUser)
+                const newUser = await signUp(data);
+                setUser(newUser);
             }
             if (type === 'sign-in') {
-                const response = await SignIn({ email: data.email, password: data.password });
-                if (response) router.push('/')
-            }
+                const response = await signIn({ email: data.email, password: data.password });
+                if (response) {
+                    console.log("Sign-in successful:", response);
+                    router.push("/");
+                    setUser(response);
+                } else {
 
-            else {
-                // Do something
+                    console.error("Sign-in failed, no response received.");
+                }
             }
         } catch (error) {
-            console.log(error)
+            console.error("AuthForm Error:", error);
+
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
+
+
+
 
     return (
         <section className='auth-form'>
@@ -93,7 +101,7 @@ const AuthForm = ({ type }: { type: string }) => {
                                         <CustomInput control={form.control} name='firstName' label='First Name' placeholder='Enter your first Name' />
                                         <CustomInput control={form.control} name='lastName' label='Last Name' placeholder='Enter your Last Name' />
                                     </div>
-                                    <CustomInput control={form.control} name='address1' label='Last Name' placeholder='Enter your Address' />
+                                    <CustomInput control={form.control} name='address1' label='Address' placeholder='Enter your Address' />
                                     <CustomInput control={form.control} name='city' label='City' placeholder='Enter your City' />
                                     <div className='flex gap-4'>
                                         <CustomInput control={form.control} name='state' label='State' placeholder='Example: NY' />
